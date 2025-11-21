@@ -1,32 +1,33 @@
-import ClientComp from "@/components/client";
+import { headers } from "next/headers";
 import { Button } from "@/components/ui/button";
-import { caller, getQueryClient, trpc } from "@/trpc/server";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { Suspense } from "react";
+import { auth } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth-utils";
+import { caller } from "@/trpc/server";
+import { redirect } from "next/navigation";
 
 export default async function Home() {
-  // const users = await prisma.user.findMany({ include: { posts: true } });
+  await requireAuth();
 
-  const users = await caller.getUsers();
-  const queryClient = getQueryClient();
-
-  void queryClient.prefetchQuery(trpc.getUsers.queryOptions());
+  const data = await caller.getUsers();
 
   return (
-    <div>
-      <h1>Hello World</h1>
-      <Button className='bg-red-500 text-white'>Test</Button>
-      <div className='grid place-content-center'>
-        <pre className='bg-neutral-100 p-4 rounded-md shadow-md border border-neutral-200'>
-          {JSON.stringify(users, null, 2)}
-        </pre>
-      </div>
+    <div className='min-h-screen min-w-screen flex items-center justify-center'>
+      <pre className='bg-neutral-100 p-4 rounded-md shadow-md border border-neutral-200'>
+        {JSON.stringify(data, null, 2)}
+      </pre>
 
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <Suspense fallback={<div>Loading...</div>}>
-          <ClientComp />
-        </Suspense>
-      </HydrationBoundary>
+      <form
+        action={async () => {
+          "use server";
+          await auth.api.signOut({
+            headers: await headers(),
+          });
+
+          redirect("/login");
+        }}
+      >
+        <Button type='submit'>Sign Out</Button>
+      </form>
     </div>
   );
 }
