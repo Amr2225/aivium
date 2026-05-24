@@ -1,0 +1,23 @@
+procs: 
+  inngest:
+    cmd: ["npm.cmd", "run", "inngest"]
+    stop: "hard-kill"
+
+  next: 
+    cmd: ["npm.cmd", "run", "dev"]
+    stop: "hard-kill"
+
+  prisma:
+    cmd: ["npm.cmd", "run", "studio"]
+    stop: "hard-kill"
+
+# For Linux / Mac OS
+# procs: 
+#   inngest:
+#     cmd: ["npm", "run", "inngest"]
+
+#   next: 
+#     cmd: ["npm", "run", "dev"]
+
+#   prisma:
+#     cmd: ["npm", "run", "studio"]
