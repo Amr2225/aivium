@@ -24,6 +24,7 @@ import {
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { useHasActiveSubscription } from "@/features/subscriptions/hooks/use-subscriptions";
 
 const menuItems = [
   {
@@ -52,6 +53,8 @@ export default function AppSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const isActive = (url: string) => pathname === url;
+
+  const { hasActiveSubscription, isLoading } = useHasActiveSubscription();
 
   return (
     <Sidebar collapsible='icon'>
@@ -94,21 +97,23 @@ export default function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              className='gap-x-4 h-10 px-4'
-              tooltip={"Upgrade to Pro"}
-              onClick={() => {}}
-            >
-              <StarIcon className='size-4' />
-              <span className='truncate'>Upgrade to Pro</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {!hasActiveSubscription && !isLoading && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                className='gap-x-4 h-10 px-4'
+                tooltip={"Upgrade to Pro"}
+                onClick={() => authClient.checkout({ slug: "aivium-pro" })}
+              >
+                <StarIcon className='size-4' />
+                <span className='truncate'>Upgrade to Pro</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton
               className='gap-x-4 h-10 px-4'
               tooltip={"Billing Portal"}
-              onClick={() => {}}
+              onClick={() => authClient.customer.portal()}
             >
               <CreditCardIcon className='size-4' />
               <span className='truncate'>Billing Portal</span>
