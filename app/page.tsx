@@ -4,6 +4,7 @@ import { authClient } from "@/lib/auth-client";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import * as Sentry from "@sentry/nextjs";
 
 export default function Home() {
   const trpc = useTRPC();
@@ -55,7 +56,14 @@ export default function Home() {
         {JSON.stringify(data, null, 2)}
       </pre>
 
-      <Button disabled={create.isPending} onClick={() => create.mutate()}>
+      <Button
+        disabled={create.isPending}
+        onClick={() => {
+          Sentry.logger.info("Test Logging Sentry.logger.info");
+          console.log("Test Logging Console.log");
+          create.mutate();
+        }}
+      >
         Create Workflow
       </Button>
       <Button onClick={() => authClient.signOut()}>Sign Out</Button>
