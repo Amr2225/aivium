@@ -18,6 +18,12 @@ export const execute = inngest.createFunction(
                 model: google('gemini-2.5-flash'),
                 system: 'You are a helpful assistant that can generate text.',
                 prompt: 'Write a vegetarian lasagna recipe for 4 people.',
+                experimental_telemetry: {
+                    isEnabled: true,
+                    functionId: "Gemini-generate-text",
+                    recordInputs: true,
+                    recordOutputs: true,
+                },
             }
         )
 
@@ -28,6 +34,12 @@ export const execute = inngest.createFunction(
                 model: openai("gpt-3.5-turbo"),
                 system: 'You are a helpful assistant that can generate text.',
                 prompt: 'Write a vegetarian lasagna recipe for 4 people.',
+                experimental_telemetry: {
+                    isEnabled: true,
+                    functionId: "OpenAI-generate-text",
+                    recordInputs: true,
+                    recordOutputs: true,
+                },
             }
         )
 
