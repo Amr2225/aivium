@@ -22,6 +22,17 @@ export default function Home() {
     }),
   );
 
+  const testAi = useMutation(
+    trpc.testAI.mutationOptions({
+      onSuccess: (data) => {
+        toast.success(data.message);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }),
+  );
+
   return (
     <div className='min-h-screen min-w-screen flex items-center justify-center'>
       <Button
@@ -34,6 +45,10 @@ export default function Home() {
         }
       >
         Sign In
+      </Button>
+
+      <Button onClick={() => testAi.mutate()} disabled={testAi.isPending}>
+        Test AI
       </Button>
 
       <pre className='bg-neutral-100 p-4 rounded-md shadow-md border border-neutral-200'>

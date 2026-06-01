@@ -1,22 +1,39 @@
-import prisma from "@/lib/db";
 import { inngest } from "./client";
+import { generateText } from "ai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
 
-export const helloWorld = inngest.createFunction(
-    { id: "hello-world" },
-    { event: "test/hello.world" },
-    async ({ event, step }) => {
-        await step.sleep("fetch-video", "5s");
-        await step.sleep("generate-transcript", "5s");
-        await step.sleep("generate-summary", "5s");
-        await step.run("create-workflow", () => {
-            return prisma.workflow.create({
-                data: {
-                    name: "inggest-workflow",
-                }
-            })
-        })
+const google = createGoogleGenerativeAI()
+const openai = createOpenAI()
+openai("gpt-3.5-turbo")
 
+export const execute = inngest.createFunction(
+    { id: "execute-ai" },
+    { event: "execute/ai" },
+    async ({ step }) => {
+        const { steps } = await step.ai.wrap(
+            "gemini-generate-text",
+            generateText,
+            {
+                model: google('gemini-2.5-flash'),
+                system: 'You are a helpful assistant that can generate text.',
+                prompt: 'Write a vegetarian lasagna recipe for 4 people.',
+            }
+        )
 
-        return { message: `Hello ${event.data.email}!` };
-    },
+        const { steps: opneAiSteps } = await step.ai.wrap(
+            "openai-generate-text",
+            generateText,
+            {
+                model: openai("gpt-3.5-turbo"),
+                system: 'You are a helpful assistant that can generate text.',
+                prompt: 'Write a vegetarian lasagna recipe for 4 people.',
+            }
+        )
+
+        return {
+            gemini: steps,
+            openai: opneAiSteps,
+        }
+    }
 );
