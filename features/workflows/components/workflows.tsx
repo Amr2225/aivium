@@ -1,31 +1,35 @@
 "use client";
 import {
+  EmptyView,
   EntityContainer,
   EntityHeader,
+  EntityItem,
+  EntityList,
   EntityPagination,
   EntitySearch,
+  ErrorView,
+  LoadingView,
 } from "@/components/entity-components";
-import { useCreateWorkflow, useSuspenseWorkflows } from "../hooks/use-workflows";
+import { useCreateWorkflow, useRemoveWorkflow, useSuspenseWorkflows } from "../hooks/use-workflows";
 import { useUpgradeModal } from "@/hooks/use-upgrade-modal";
 import { useRouter } from "next/navigation";
 import { useWorkflowsParams } from "../hooks/use-workflows-params";
 import { useEntitySearch } from "@/hooks/use-entity-search";
+import type { Workflow } from "@/lib/generated/prisma/client";
+import { WorkflowIcon } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { dataTagErrorSymbol } from "@tanstack/react-query";
 
 export default function WorkflowsList() {
   const workflows = useSuspenseWorkflows();
 
   return (
-    <div>
-      <div>
-        <h1>Workflows</h1>
-      </div>
-      <div>
-        <pre>{JSON.stringify(workflows.data, null, 2)}</pre>
-        {/* {workflows.data.map((workflow) => (
-          <div key={workflow.id}>{workflow.name}</div>
-        ))} */}
-      </div>
-    </div>
+    <EntityList
+      items={workflows.data.items}
+      getKey={(workflow) => workflow.id}
+      renderItem={(workflow) => <WorkflowItem workflow={workflow} />}
+      emptyView={<WorkflowsEmpty />}
+    />
   );
 }
 
@@ -89,6 +93,63 @@ export const WorkflowsPagination = () => {
       page={params.page}
       totalPages={workflows.data.totalPages}
       onPageChange={(page) => setParams({ ...params, page })}
+    />
+  );
+};
+
+export const WorkflowsLoading = () => {
+  return <LoadingView message='Loading workflows...' />;
+};
+
+export const WorkflowsError = () => {
+  return <ErrorView message='Error loading workflows...' />;
+};
+
+const WorkflowsEmpty = () => {
+  const createWorkflow = useCreateWorkflow();
+  const { handleError, modal } = useUpgradeModal();
+
+  const handleCreateWorkflow = () => {
+    createWorkflow.mutate(undefined, {
+      onError: handleError, // Props will be automatically passed to the handleError function
+    });
+  };
+
+  return (
+    <>
+      {modal}
+      <EmptyView
+        message="You haven't created any workflows yet. Get started by creating your first workflow"
+        onNew={handleCreateWorkflow}
+      />
+    </>
+  );
+};
+
+const WorkflowItem = ({ workflow }: { workflow: Workflow }) => {
+  const removeWorkflow = useRemoveWorkflow();
+
+  const handleRemoveWorkflow = async () => {
+    await removeWorkflow.mutateAsync({ id: workflow.id });
+  };
+
+  return (
+    <EntityItem
+      href={`/workflows/${workflow.id}`}
+      title={workflow.name}
+      subtitle={
+        <>
+          Updated {formatDistanceToNow(workflow.updatedAt, { addSuffix: true })} &bull; Created{" "}
+          {formatDistanceToNow(workflow.createdAt, { addSuffix: true })}
+        </>
+      }
+      image={
+        <div className='size-8 flex items-center justify-center'>
+          <WorkflowIcon className='size-5 text-muted-foreground' />
+        </div>
+      }
+      onRemove={handleRemoveWorkflow}
+      isRemoving={removeWorkflow.isPending}
     />
   );
 };
