@@ -7,7 +7,7 @@ export default async function ViewLayout({ children }: { children: React.ReactNo
   return (
     <>
       <AppHeader />
-      <main>{children}</main>
+      <main className='flex-1'>{children}</main>
     </>
   );
 }
