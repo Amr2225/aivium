@@ -1,7 +1,9 @@
 import { PAGINATION } from "@/config/contsants";
 import prisma from "@/lib/db";
+import { NodeType } from "@/generated/prisma";
 import { createTRPCRouter, proProcedure, protectedProcedure } from "@/trpc/init";
 import { generateSlug } from "random-word-slugs"
+import type { Node, Edge, XYPosition } from "@xyflow/react";
 import z from "zod";
 
 export const workflowRouter = createTRPCRouter({
@@ -9,7 +11,14 @@ export const workflowRouter = createTRPCRouter({
         return prisma.workflow.create({
             data: {
                 name: generateSlug(3),
-                userId: ctx.auth.user.id
+                userId: ctx.auth.user.id,
+                nodes: {
+                    create: {
+                        type: NodeType.INITIAL,
+                        position: { x: 0, y: 0 },
+                        name: NodeType.INITIAL
+                    }
+                }
             }
         })
     }),
@@ -33,13 +42,46 @@ export const workflowRouter = createTRPCRouter({
         })
     }),
 
-    getOne: protectedProcedure.input(z.object({ id: z.string() })).query(({ ctx, input }) => {
-        return prisma.workflow.findUniqueOrThrow({
+    getOne: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+        const workflow = await prisma.workflow.findUniqueOrThrow({
             where: {
                 id: input.id,
                 userId: ctx.auth.user.id
+            },
+            include: {
+                nodes: true,
+                connections: true,
             }
         })
+
+        // Transforming server nodes to react-flow compatible nodes
+        const nodes: Node[] = workflow.nodes.map((node) => ({
+            id: node.id,
+            type: node.type,
+            position: node.position as XYPosition,
+            data: (node.data as Record<string, unknown>) || {},
+        }))
+
+
+        // Transforming server connections to react-flow compatible edges
+        const edges: Edge[] = workflow.connections.map((connection) => ({
+            id: connection.id,
+            source: connection.fromNodeId,
+            target: connection.toNodeId,
+            sourceHandle: connection.fromOutput,
+            targetHandle: connection.toInput,
+
+            type: 'default',
+            animated: true,
+            style: { stroke: '#000' },
+        }))
+
+        return {
+            id: workflow.id,
+            name: workflow.name,
+            nodes,
+            edges,
+        }
     }),
 
     getMany: protectedProcedure
