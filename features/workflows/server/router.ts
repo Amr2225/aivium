@@ -6,6 +6,26 @@ import { generateSlug } from "random-word-slugs"
 import type { Node, Edge, XYPosition } from "@xyflow/react";
 import z from "zod";
 
+const updateWorkflowinput = z.object({
+    id: z.string(),
+    nodes: z.array(
+        z.object({
+            id: z.string(),
+            type: z.string().nullish(),
+            position: z.object({ x: z.number(), y: z.number() }),
+            data: z.record(z.string(), z.any()).optional()
+        })
+    ),
+    edges: z.array(
+        z.object({
+            source: z.string(),
+            target: z.string(),
+            sourceHandle: z.string().nullish(),
+            targetHandle: z.string().nullish(),
+        })
+    )
+})
+
 export const workflowRouter = createTRPCRouter({
     create: proProcedure.mutation(({ ctx }) => {
         return prisma.workflow.create({
@@ -42,6 +62,42 @@ export const workflowRouter = createTRPCRouter({
         })
     }),
 
+    udpate: protectedProcedure
+        .input(updateWorkflowinput)
+        .mutation(async ({ ctx, input }) => {
+            const { id, nodes, edges } = input;
+
+            return await prisma.workflow.update({
+                where: { id, userId: ctx.auth.user.id },
+                data: {
+                    // Create Nodes
+                    nodes: {
+                        deleteMany: {},
+                        createMany: {
+                            data: nodes.map((node) => ({
+                                id: node.id,
+                                name: node.type || "Unknown",
+                                type: node.type as NodeType,
+                                position: node.position,
+                                data: node.data || {}
+                            })),
+                        }
+                    },
+                    connections: {
+                        createMany: {
+                            data: edges.map((edge) => ({
+                                fromNodeId: edge.source,
+                                toNodeId: edge.target,
+                                fromOutput: edge.sourceHandle || "main",
+                                toInput: edge.targetHandle || "main",
+                            }))
+                        }
+                    },
+                    updatedAt: new Date(),
+                }
+            })
+        }),
+
     getOne: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
         const workflow = await prisma.workflow.findUniqueOrThrow({
             where: {
@@ -71,9 +127,9 @@ export const workflowRouter = createTRPCRouter({
             sourceHandle: connection.fromOutput,
             targetHandle: connection.toInput,
 
-            type: 'default',
-            animated: true,
-            style: { stroke: '#000' },
+            // type: 'default',
+            // animated: true,
+            // style: { stroke: '#000' },
         }))
 
         return {
