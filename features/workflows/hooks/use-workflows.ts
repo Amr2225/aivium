@@ -3,6 +3,9 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { toast } from "sonner";
 import { useWorkflowsParams } from "./use-workflows-params";
 
+/**
+ *  Hook to get all workflows
+ */
 export const useSuspenseWorkflows = () => {
     const trpc = useTRPC();
     const [params] = useWorkflowsParams();
@@ -10,11 +13,17 @@ export const useSuspenseWorkflows = () => {
     return useSuspenseQuery(trpc.workflows.getMany.queryOptions(params));
 }
 
+/**
+ *  Hook to get a workflow
+ */
 export const useSuspenseWorkflow = (id: string) => {
     const trpc = useTRPC();
     return useSuspenseQuery(trpc.workflows.getOne.queryOptions({ id }));
 }
 
+/**
+ *  Hook to create a workflow
+ */
 export const useCreateWorkflow = () => {
     const queryClient = useQueryClient();
     const trpc = useTRPC();
@@ -30,6 +39,9 @@ export const useCreateWorkflow = () => {
     }));
 }
 
+/**
+ *  Hook to remove a workflow
+ */
 export const useRemoveWorkflow = () => {
     const queryClient = useQueryClient();
     const trpc = useTRPC();
@@ -43,6 +55,9 @@ export const useRemoveWorkflow = () => {
     }));
 }
 
+/**
+ *  Hook to update a workflow name
+ */
 export const useUpdateWorkflowName = () => {
     const queryClient = useQueryClient();
     const trpc = useTRPC();
@@ -55,6 +70,25 @@ export const useUpdateWorkflowName = () => {
         },
         onError: (error) => {
             toast.error(`Failed to update workflow name: ${error.message}`);
+        },
+    }));
+}
+
+/**
+ *  Hook to update a workflow
+ */
+export const useUpdateWorkflow = () => {
+    const queryClient = useQueryClient();
+    const trpc = useTRPC();
+
+    return useMutation(trpc.workflows.udpate.mutationOptions({
+        onSuccess: (data) => {
+            toast.success(`Workflow saved successfully`);
+            queryClient.invalidateQueries(trpc.workflows.getMany.queryOptions({}));
+            queryClient.invalidateQueries(trpc.workflows.getOne.queryFilter({ id: data.id }));
+        },
+        onError: (error) => {
+            toast.error(`Failed to save workflow: ${error.message}`);
         },
     }));
 }
