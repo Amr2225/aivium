@@ -1,8 +1,22 @@
 import type { NodeExecutor } from "@/features/executions/types";
 import { NonRetriableError } from "inngest";
-import type { AxiosResponse, AxiosRequestConfig as RequestOptions } from "axios"
+import type { AxiosRequestConfig as RequestOptions } from "axios"
 import axios, { AxiosError } from "axios";
 import https from "https";
+import Handlebars from "handlebars";
+
+Handlebars.registerHelper("json", (context: unknown) => {
+    const jsonString = JSON.stringify(context, null, 2);
+    return new Handlebars.SafeString(jsonString);
+});
+// function resolve(template: string, ctx: object) {
+//     return template.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (i, path) => {
+//         const val = path.split(".").reduce((object: object, key: string) => object?.[key], ctx);
+//         console.log(val, typeof val)
+//         if (typeof val === "object") return JSON.stringify(val, null, 2);
+//         else return val == null ? "" : String(val);
+//     });
+// }
 
 type HttpRequestData = {
     variableName?: string;
@@ -32,14 +46,18 @@ export const httpRequestExecutor: NodeExecutor<HttpRequestData> = async ({ data,
         throw new NonRetriableError("HTTP Request node: no endpoint configured");
     }
 
-
     // const response = await step.fetch("http-request", data.endpoint)
     const result = await step.run("http-request", async () => {
         const method = data.method || "GET";
-        const endpoint = data.endpoint!;
+        const endpoint = Handlebars.compile(data.endpoint)(context)
+        console.log("Endpoint", endpoint)
         const options: RequestOptions = { method }
+
         if (["POST", "PUT", "PATCH"].includes(method)) {
-            options.data = data.body
+            const resolved = Handlebars.compile(data.body || "{}")(context)
+            JSON.parse(resolved)
+
+            options.data = resolved;
             options.headers = { // TODO: assess this
                 "Content-Type": "application/json",
             }

@@ -9,8 +9,13 @@ export const AddNodeButton = memo(() => {
 
   useEffect(() => {
     const keyDownListener = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-      else if (event.key === "Tab") setOpen(true);
+      const isTyping =
+        event.target instanceof HTMLElement &&
+        ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName);
+      const isDialogOpen = document.querySelector('[role="dialog"]');
+
+      if (event.key === "Escape" && open) setOpen(false);
+      else if (event.key === "Tab" && !isTyping && !isDialogOpen) setOpen(true);
     };
 
     window.addEventListener("keydown", keyDownListener);

@@ -58,6 +58,7 @@ export const Editor = ({ workflowId }: { workflowId: string }) => {
   return (
     <div className='size-full'>
       <ReactFlow
+        id='editor-flow'
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}

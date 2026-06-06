@@ -32,6 +32,10 @@ import { useForm } from "react-hook-form";
 import z from "zod";
 import { Button } from "@/components/ui/button";
 
+import { json } from "@codemirror/lang-json";
+import CodeMirror from "@uiw/react-codemirror";
+import { customTagHighlighter } from "./custom-tag-highlighter";
+
 const formSchema = z.object({
   variableName: z
     .string()
@@ -85,6 +89,27 @@ export const HttpRequestDialog = ({
       body: defaultValues.body || "",
     });
   }, [defaultValues, form, open]);
+
+  function escapeHtml(s: string) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function highlight(text: string) {
+    const escaped = escapeHtml(text);
+    // wrap {{ ... }} including the braces
+    const html = escaped.replace(
+      /(\{\{)([^}]*?)(\}\})/g,
+      `<span class="tpl-brace">$1</span><span class="tpl-path">$2</span><span class="tpl-brace">$3</span>`,
+    );
+    // append a trailing space so a final newline renders
+    return html + "\n";
+  }
+  function syncScroll(e: React.UIEvent<HTMLTextAreaElement>) {
+    const ta = e.currentTarget;
+    const hl = ta.previousElementSibling as HTMLElement;
+    hl.scrollTop = ta.scrollTop;
+    hl.scrollLeft = ta.scrollLeft;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -170,13 +195,49 @@ export const HttpRequestDialog = ({
                   <FormItem>
                     <FormLabel>Request Body</FormLabel>
                     <FormControl>
-                      <Textarea
+                      <div>
+                        <style>
+                          {`
+                          .cm-custom-json-tag {
+                            color: #ffffff !important;
+                            background-color: #007bff;
+                            padding: 2px 6px;
+                            border-radius: 4px;
+                            font-weight: bold;
+                          }
+                        `}
+                        </style>
+                        <CodeMirror
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          extensions={[customTagHighlighter, json()]}
+                          theme='light'
+                          className='min-h-[120px] max-h-[250px] overflow-y-auto font-mono text-sm border-none outline-none'
+                          basicSetup={{
+                            autocompletion: true,
+                            lineNumbers: false,
+                            highlightSpecialChars: true,
+                            dropCursor: false,
+                            foldGutter: false,
+                            searchKeymap: false,
+                            tabSize: 2,
+                          }}
+                          minHeight='120px'
+                          maxHeight='250px'
+                          placeholder={
+                            '{\n "userId: "{{httpResponse.data.id}}",\n "name": "{{httpResponse.data.name}}",\n "items": "{{httpResponse.data.items}}"\n}'
+                          }
+                        />
+                      </div>
+                      {/* <Textarea
                         {...field}
                         placeholder={
                           '{\n "userId: "{{httpResponse.data.id}}",\n "name": "{{httpResponse.data.name}}",\n "items": "{{httpResponse.data.items}}"\n}'
                         }
                         className='min-h-[120px] font-mono text-sm'
-                      />
+                        spellCheck={false}
+                        onScroll={syncScroll}
+                      /> */}
                     </FormControl>
                     <FormDescription>
                       JSON with template variables. use {"{{variables}}"} for simple values or{" "}
