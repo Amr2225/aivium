@@ -39,7 +39,7 @@ const formSchema = z.object({
 });
 export type HttpRequestFormType = z.infer<typeof formSchema>;
 
-interface ManualTriggerDialogProps {
+interface HttpRequestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: HttpRequestFormType) => void;
@@ -50,7 +50,7 @@ export const HttpRequestDialog = ({
   onOpenChange,
   onSubmit,
   defaultValues = {},
-}: ManualTriggerDialogProps) => {
+}: HttpRequestDialogProps) => {
   const form = useForm<HttpRequestFormType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -70,9 +70,9 @@ export const HttpRequestDialog = ({
   // Resets form values when dialog is opened with new defaults
   useEffect(() => {
     form.reset({
-      endpoint: defaultValues.endpoint,
+      endpoint: defaultValues.endpoint || "",
       method: defaultValues.method || "GET",
-      body: defaultValues.body,
+      body: defaultValues.body || "",
     });
   }, [defaultValues, form, open]);
 

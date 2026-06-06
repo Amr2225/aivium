@@ -15,7 +15,7 @@ import {
   useUpdateWorkflow,
   useUpdateWorkflowName,
 } from "@/features/workflows/hooks/use-workflows";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { editorStore } from "../store/atoms";
 import { useAtomValue } from "jotai";
@@ -115,20 +115,7 @@ const EditorSaveButton = ({ workflowId }: { workflowId: string }) => {
   const editor = useAtomValue(editorStore);
   const saveWorkflow = useUpdateWorkflow();
 
-  // shortcut for saving ctrl+s
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === "s") {
-        e.preventDefault();
-        handleSave();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [editor]);
-
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!editor) return;
 
     const nodes = editor.getNodes();
@@ -139,7 +126,20 @@ const EditorSaveButton = ({ workflowId }: { workflowId: string }) => {
       nodes,
       edges,
     });
-  };
+  }, [editor, saveWorkflow, workflowId]);
+
+  // shortcut for saving ctrl+s
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleSave]);
 
   return (
     <div className='ml-auto'>

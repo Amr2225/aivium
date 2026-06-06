@@ -12,7 +12,7 @@ type HttpRequestData = {
 const api = axios.create({
     httpsAgent: new https.Agent({
         keepAlive: false,
-        rejectUnauthorized: false // Bypasses SSL verification
+        // rejectUnauthorized: false // Bypasses SSL verification
     }),
     httpAgent: new https.Agent({
         keepAlive: false,
