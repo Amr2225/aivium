@@ -34,19 +34,17 @@ export const executeWorkflow = inngest.createFunction(
 
         // Execute each node
         for (const node of sortedNodes) {
-            context = await step.run(`execute-node-${node.id}`, async () => {
-                try {
-                    const executor = getExecutor(node.type as NodeType);
-                    return await executor({
-                        data: node.data as Record<string, unknown>,
-                        nodeId: node.id,
-                        context,
-                        step
-                    });
-                } catch (error) {
-                    throw new Error(`Node ${node.id} (${node.type}) failed: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            })
+            try {
+                const executor = getExecutor(node.type as NodeType);
+                context = await executor({
+                    data: node.data as Record<string, unknown>,
+                    nodeId: node.id,
+                    context,
+                    step
+                });
+            } catch (error) {
+                throw new Error(`Node ${node.id} (${node.type}) failed: ${error instanceof Error ? error.message : String(error)}`);
+            }
         }
 
         return {
@@ -55,3 +53,5 @@ export const executeWorkflow = inngest.createFunction(
         };
     }
 );
+
+
