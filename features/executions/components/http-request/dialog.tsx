@@ -37,36 +37,32 @@ const formSchema = z.object({
   method: z.enum(["GET", "POST", "PUT", "DELETE", "PATCH"]),
   body: z.string().optional(),
 });
-export type formSchemaType = z.infer<typeof formSchema>;
+export type HttpRequestFormType = z.infer<typeof formSchema>;
 
 interface ManualTriggerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: formSchemaType) => void;
-  defaultEnpoint?: string;
-  defaultMethod?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  defaultBody?: string;
+  onSubmit: (data: HttpRequestFormType) => void;
+  defaultValues?: Partial<HttpRequestFormType>;
 }
 export const HttpRequestDialog = ({
   open,
   onOpenChange,
   onSubmit,
-  defaultEnpoint = "",
-  defaultMethod = "GET",
-  defaultBody = "",
+  defaultValues = {},
 }: ManualTriggerDialogProps) => {
-  const form = useForm<formSchemaType>({
+  const form = useForm<HttpRequestFormType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      endpoint: defaultEnpoint,
-      method: defaultMethod,
-      body: defaultBody,
+      endpoint: defaultValues.endpoint || "",
+      method: defaultValues.method || "GET",
+      body: defaultValues.body || "",
     },
   });
 
   const watchMethod = form.watch("method");
   const showBodyField = ["POST", "PUT", "PATCH"].includes(watchMethod);
-  const handleSubmit = (data: formSchemaType) => {
+  const handleSubmit = (data: HttpRequestFormType) => {
     onSubmit(data);
     onOpenChange(false);
   };
@@ -74,11 +70,11 @@ export const HttpRequestDialog = ({
   // Resets form values when dialog is opened with new defaults
   useEffect(() => {
     form.reset({
-      endpoint: defaultEnpoint,
-      method: defaultMethod,
-      body: defaultBody,
+      endpoint: defaultValues.endpoint,
+      method: defaultValues.method || "GET",
+      body: defaultValues.body,
     });
-  }, [defaultEnpoint, defaultMethod, defaultBody, form]);
+  }, [defaultValues, form, open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

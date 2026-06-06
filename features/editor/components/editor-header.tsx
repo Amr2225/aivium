@@ -115,6 +115,19 @@ const EditorSaveButton = ({ workflowId }: { workflowId: string }) => {
   const editor = useAtomValue(editorStore);
   const saveWorkflow = useUpdateWorkflow();
 
+  // shortcut for saving ctrl+s
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [editor]);
+
   const handleSave = async () => {
     if (!editor) return;
 
